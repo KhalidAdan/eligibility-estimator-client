@@ -39,6 +39,7 @@ export class FutureHandler {
   private getSingleResults() {
     let result = this.futureResultsObj
     const yearsInCanada = Number(this.query.yearsInCanadaSince18)
+
     const age = Number(this.query.age)
     // TODO: take into consideration whether in Canada or not? (could be 10 or 20)
     const residencyReq = 10
@@ -57,7 +58,8 @@ export class FutureHandler {
     this.newQuery['receiveOAS'] = 'false'
 
     if (
-      this.query.livedOnlyInCanada === 'false' &&
+      (this.query.livedOnlyInCanada === 'false' ||
+        !this.query.livedOnlyInCanada) &&
       this.query.yearsInCanadaSince18
     ) {
       this.newQuery['yearsInCanadaSince18'] = String(
@@ -163,7 +165,6 @@ export class FutureHandler {
       Number(this.query.yearsInCanadaSinceOAS)
     const partnerRes = Number(this.query.partnerYearsInCanadaSince18)
     const partnerOnlyCanada = this.query.partnerLivedOnlyInCanada
-
     const clientDeferralMeta =
       this.currentHandler.benefitResults?.client?.oas?.entitlement?.deferral
     const partnerDeferralMeta =
@@ -206,7 +207,16 @@ export class FutureHandler {
       },
     }
 
+    // TODO when there is a StartFromDate the years need to be added to the array below
     const futureAges = getAgeArray(agesInputObj)
+
+    // const futureAges = [[68, 65]]
+
+    // probably in the results, we should suppress any oas results for an age less than the desired start date
+
+    // TODO this.query is missing the residence years, and months delayed
+
+    console.log('futureAges', futureAges)
 
     let result = this.futureResultsObj
     if (futureAges.length !== 0) {

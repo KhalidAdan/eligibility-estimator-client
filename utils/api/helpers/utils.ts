@@ -266,18 +266,24 @@ export function AlwsEligibility(age, yearsInCanada) {
   }
 }
 
-export function evaluateOASInput(input) {
+export function evaluateOASInput(input, formAge) {
   let canDefer = false
   let justBecameEligible = false
   const age = input.age // 66.42
   const ageJuly2013 = calculate2013Age(age, input.clientBirthDate)
+
+  console.log('ageJuly2013', ageJuly2013)
+
   const yearsInCanada = input.yearsInCanadaSince18
+
   let eliObj = OasEligibility(
     age,
     yearsInCanada,
     input.livedOnlyInCanada,
     input.livingCountry.value
   )
+
+  console.log('eliObj', eliObj) // calculates age of eligibility as well as years of residence at eligibility
 
   let newInput = { ...input }
 
@@ -302,11 +308,24 @@ export function evaluateOASInput(input) {
     } else {
       // They became eligible after July 2013 -> use age and residency as is (at the time they became eligible for OAS)
       deferralMonths = (Math.min(70, age) - eliObj.ageOfEligibility) * 12
-    }
-  }
 
-  if (age === eliObj.ageOfEligibility && age < 70) {
-    justBecameEligible = true
+      // If the client selected an Start_Date_for_OAS then
+      //   IF Client age >= 65 add ALL futureMonths to the deferral months
+      //   If Client age < 65 futureMonths will be converted into years and months discarting any months after 65
+      //      Example: client age is 45.6 wants oas as of 65.6 => 240 months However at 65 he only have 234 montsh or 19 yrs and 6 months
+      //
+      // if (!input.whenToStartOAS) {
+      //   let futureMonths = input.startDateForOAS * 12 * -1
+
+      //   if (formAge >= 65) {
+      //     deferralMonths = deferralMonths + futureMonths
+      //   } else {
+      //     eliObj.yearsOfResAtEligibility =
+      //       eliObj.yearsOfResAtEligibility + Math.floor(65 - formAge)
+      //     deferralMonths = ((65 - formAge) * 12) % 12
+      //   }
+      // }
+    }
   }
 
   if (age === eliObj.ageOfEligibility && age < 70) {

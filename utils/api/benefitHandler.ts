@@ -116,6 +116,10 @@ export class BenefitHandler {
     const initialPartnerBenefitStatus =
       this.input.client.partnerBenefitStatus.value
 
+    // saving the original input value for residence
+    if (this.formYearsInCanada === undefined)
+      this.formYearsInCanada = this.input.client.yearsInCanadaSince18
+
     // Future handler takes care of cases when partner is not yet eligible by creating "age sets" of future eligible ages
     // If partner was already eligible in the past based on residency, we need to adjust the inputs
     if (!this.future) {
@@ -158,6 +162,26 @@ export class BenefitHandler {
       )
     }
 
+    // If client selected a when to start OAS date then the client accumulates some extra months of residency
+    //  if date to start is greater than 12 months
+    //     full yrs are added to the residence
+    //     partial months are added as a deferral months
+    if (
+      this.input.client.whenToStartOAS !== undefined &&
+      !this.input.client.whenToStartOAS &&
+      !this.future
+    ) {
+      let futureMonths = this.input.client.startDateForOAS * 12 * -1
+
+      this.input.client.yearsInCanadaSince18 =
+        this.input.client.yearsInCanadaSince18 +
+        Math.floor(Math.round(futureMonths) / 12)
+
+      this.input.client.oasDeferDuration = `{"months":${Math.round(
+        futureMonths % 12
+      )}, "years": 0}`
+    }
+
     const clientOasNoDeferral = new OasBenefit(
       this.input.client,
       this.fields.translations,
@@ -168,6 +192,7 @@ export class BenefitHandler {
       this.formAge,
       this.formYearsInCanada
     )
+
     // If the client needs help, check their partner's OAS.
     // no defer and defer options?
     if (this.input.client.partnerBenefitStatus.helpMe) {
@@ -197,15 +222,26 @@ export class BenefitHandler {
       clientOasNoDeferral.entitlement.result
     )
 
+    // Previous calculations changes the value of yearsInCanadaSince18
+    //  this restores the original value when needed
+    if (
+      this.input.client.whenToStartOAS !== undefined &&
+      !this.input.client.whenToStartOAS
+    ) {
+      this.input.client.yearsInCanadaSince18 = this.formYearsInCanada
+    }
+
     // Determines if it is possible to defer OAS and provides useful properties such as new inputs and deferral months to calculate the OAS deferred case
-    const clientOasHelper = evaluateOASInput(this.input.client)
+    const clientOasHelper = evaluateOASInput(this.input.client, this.formAge)
+    console.log('clientOasHelper', clientOasHelper)
 
     let clientOasWithDeferral
     if (clientOasHelper.canDefer) {
-      consoleDev(
-        'Modified input to calculate OAS with deferral',
-        clientOasHelper.newInput
-      )
+      // consoleDev(
+      //   'Modified input to calculate OAS with deferral',
+      //   clientOasHelper.newInput
+      // )
+
       clientOasWithDeferral = new OasBenefit(
         clientOasHelper.newInput,
         this.fields.translations,
