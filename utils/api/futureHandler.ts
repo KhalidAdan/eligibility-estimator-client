@@ -250,9 +250,10 @@ export class FutureHandler {
           })
         }
 
-        const partnerEligibleBenefits = this.getEligibleBenefits(
-          handler.benefitResults.partner
-        )
+        // Only calculate PartnerBenefit when ClientBenefit isn't null (Task 311218)
+        const partnerEligibleBenefits = clientEligibleBenefits
+          ? this.getEligibleBenefits(handler.benefitResults.partner)
+          : null
 
         // Lock residence if this calculation produces an OAS/GIS result. We need to use the same number of years for subsequent OAS/GIS results if there are any
         if (clientEligibleBenefits) {
